@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EMBERWATCH — Night 1 (Prototype)</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud" class="hidden">
+  <div id="objective"><div class="obj-title">OBJECTIVE</div><div class="obj-hint"></div></div>
+  <div id="toast"></div>
+  <div id="prompt" class="hidden"><b>E</b> &nbsp;<span id="promptText"></span></div>
+</div>
+
+<div id="vignette"></div>
+<div id="grain"></div>
+<div id="damage"></div>
+
+<div id="bino" class="hidden"><div class="mask"></div><div class="ch h"></div><div class="ch v"></div></div>
+
+<div id="dialogue" class="hidden">
+  <div class="who" id="dlgWho">RANGER ELLIS</div>
+  <div class="line" id="dlgLine"></div>
+  <div class="next">E &#9656;</div>
+</div>
+
+<div id="note" class="overlay hidden">
+  <div class="paper">
+    <h3>TORN PAGE &mdash; J. MERRITT'S JOURNAL</h3>
+    <p>Day 4 &mdash; It stands where the trees thin. It doesn't walk. Every time I look away, it's closer.<br><br>
+    Day 5 &mdash; Don't let it near the tower. The light is how it calls.<br><br>
+    If you're reading this, it's already watching you.</p>
+  </div>
+  <div class="close">E / CLICK TO PUT IT DOWN</div>
+</div>
+
+<div id="title" class="overlay">
+  <h1>EMBERWATCH</h1>
+  <h2>NIGHT 1 &mdash; IRONBARK RIDGE</h2>
+  <div class="mission">
+    <div class="mission-title">YOUR OBJECTIVE</div>
+    <p>Climb the tower, check in on the radio, and scan the northern treeline. Investigate the strange light, keep it in your flashlight beam, then return and bar the tower door.</p>
+  </div>
+  <div class="begin">CLICK TO BEGIN</div>
+  <div class="controls">
+    WASD &mdash; move &nbsp;&bull;&nbsp; MOUSE &mdash; look &nbsp;&bull;&nbsp; SHIFT &mdash; run<br>
+    F &mdash; flashlight &nbsp;&bull;&nbsp; E &mdash; interact &nbsp;&bull;&nbsp; RIGHT-CLICK / B &mdash; binoculars
+  </div>
+  <div class="warn">HEADPHONES RECOMMENDED &mdash; CONTAINS FLASHING LIGHTS &amp; LOUD SOUNDS</div>
+</div>
+
+<div id="pausehint" class="overlay hidden"><div>CLICK TO RESUME</div></div>
+<div id="fade"></div>
+<div id="ending" class="overlay hidden">
+  <h1>NIGHT 1 COMPLETE</h1>
+  <p>TO BE CONTINUED...</p>
+  <div class="thanks">THANKS FOR PLAYING THE EMBERWATCH PROTOTYPE</div>
+</div>
+<div id="loaderr" class="overlay hidden"><div>Could not load the 3D engine.<br>Check your connection and reload.</div></div>
+
+<script src="game.js"></script>
+<script src="three-loader.js"></script>
+</body>
+</html>
