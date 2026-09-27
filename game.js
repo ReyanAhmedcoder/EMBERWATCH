@@ -20,7 +20,7 @@ const S = {
   ctx:null, master:null, noiseBuf:null,
   windGain:null, started:false,
   heartOn:false, heartBpm:72, _nextBeat:0,
-  _cricketT:0.5, cricketsOn:true,
+  _cricketT:0.5, cricketsOn:true, _horrorT:3,
 
   init() {
     if (this.started) return;
@@ -104,6 +104,34 @@ const S = {
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
     s.connect(f); f.connect(g); g.connect(this.master);
     s.start(t, Math.random() * 1.5); s.stop(t + 0.14);
+    const o = c.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(run ? 74 : 58, t);
+    o.frequency.exponentialRampToValueAtTime(31, t + 0.18);
+    const og = c.createGain(); og.gain.setValueAtTime(run ? 0.16 : 0.1, t);
+    og.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    o.connect(og); og.connect(this.master); o.start(t); o.stop(t + 0.22);
+  },
+
+  horrorPulse() {
+    if (!this.started) return;
+    const c = this.ctx, t = c.currentTime;
+    const o = c.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(rand(110, 170), t);
+    o.frequency.exponentialRampToValueAtTime(rand(42, 58), t + 0.8);
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 380;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.linearRampToValueAtTime(0.12, t + 0.12);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    o.connect(f); f.connect(g); g.connect(this.master);
+    o.start(t); o.stop(t + 1.3);
+    const n = this._noiseSrc();
+    const nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = rand(700, 1200); nf.Q.value = 5;
+    const ng = c.createGain(); ng.gain.setValueAtTime(0.001, t);
+    ng.gain.linearRampToValueAtTime(0.08, t + 0.25);
+    ng.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+    n.connect(nf); nf.connect(ng); ng.connect(this.master);
+    n.start(t, Math.random()); n.stop(t + 1);
   },
 
   /* --- radio static burst with crackle --- */
@@ -802,6 +830,32 @@ const P = {
 // so yaw = 0 faces them. Start looking at the tower:
 P.yaw = 0;
 
+/* ---------------- visible player avatar ---------------- */
+const avatar = { group:null, arms:[], legs:[], torso:null, head:null, flashlight:null };
+(function buildPlayerAvatar(){
+  const g = new THREE.Group();
+  const coat = new THREE.MeshLambertMaterial({ color:0x26313a });
+  const cloth = new THREE.MeshLambertMaterial({ color:0x4b2d25 });
+  const skin = new THREE.MeshLambertMaterial({ color:0xb4775c });
+  function part(geo, mat, x, y, z) {
+    const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); g.add(m); return m;
+  }
+  avatar.torso = part(new THREE.BoxGeometry(0.78, 1.05, 0.42), coat, 0, 1.18, 0);
+  avatar.head = part(new THREE.SphereGeometry(0.25, 10, 8), skin, 0, 1.95, 0);
+  part(new THREE.BoxGeometry(0.44, 0.16, 0.48), cloth, 0, 2.15, 0);
+  avatar.arms.push(part(new THREE.BoxGeometry(0.18, 0.95, 0.18), coat, -0.52, 1.18, 0));
+  avatar.arms.push(part(new THREE.BoxGeometry(0.18, 0.95, 0.18), coat, 0.52, 1.18, 0));
+  avatar.flashlight = part(new THREE.CylinderGeometry(0.06, 0.08, 0.38, 8),
+    new THREE.MeshLambertMaterial({ color:0x17191c }), 0.56, 0.78, -0.28);
+  avatar.flashlight.rotation.x = Math.PI / 2;
+  avatar.legs.push(part(new THREE.BoxGeometry(0.23, 0.95, 0.24), cloth, -0.2, 0.48, 0));
+  avatar.legs.push(part(new THREE.BoxGeometry(0.23, 0.95, 0.24), cloth, 0.2, 0.48, 0));
+  part(new THREE.BoxGeometry(0.3, 0.14, 0.52), new THREE.MeshLambertMaterial({ color:0x11151a }), -0.2, 0.07, -0.08);
+  part(new THREE.BoxGeometry(0.3, 0.14, 0.52), new THREE.MeshLambertMaterial({ color:0x11151a }), 0.2, 0.07, -0.08);
+  avatar.group = g;
+  scene.add(g);
+})();
+
 const keys = {};
 let pointerLocked = false;
 let gameStarted = false, gameOver = false;
@@ -919,6 +973,14 @@ function showToast(text, dur) {
    DIALOGUE — typewriter radio conversations
    ===================================================================== */
 const DLG = { active:false, lines:[], i:0, shown:0, t:0, full:'', onDone:null };
+const DLG_OPENING = [
+  { who:'DISPATCH', you:false, text:'Tower 7, confirm visual. You are replacing Ranger Merritt until dawn.' },
+  { who:'YOU', you:true, text:'Confirmed. I have the tower and the north ridge in sight.' },
+  { who:'DISPATCH', you:false, text:'Merritt stopped answering three nights ago. Her last log mentioned a light below the tree line.' },
+  { who:'YOU', you:true, text:'A light? What kind of light?' },
+  { who:'DISPATCH', you:false, text:'She called it a signal. Do not follow it. Check in, keep the door barred, and wait for morning.' },
+  { who:'YOU', you:true, text:'Understood. I will find out what happened to her.' }
+];
 const DLG_CHECKIN = [
   { who:'RANGER ELLIS', you:false, text:'Tower 7, this is Ellis at base. Radio check, over.' },
   { who:'YOU', you:true, text:"Loud and clear, Ellis. Just climbed up. It's... a lot of trees out here. Over." },
@@ -931,6 +993,12 @@ const DLG_REPORT = [
   { who:'RANGER ELLIS', you:false, text:"...Say again? There's nothing past that ridge, kid. No trails, no camps. Over." },
   { who:'YOU', you:true, text:"It's there. I'm going down for a closer look. Over." },
   { who:'RANGER ELLIS', you:false, text:"Negative — stay in the tower, that's an order— *KSSSH* —Tower 7? ...Damn it. *static*" }
+];
+const DLG_MERRITT = [
+  { who:'MERRITT — RECORDED LOG', you:false, text:'If this page made it back to the tower, then it has learned the path.' },
+  { who:'MERRITT — RECORDED LOG', you:false, text:'The light is not a lamp. It is looking for someone who will answer.' },
+  { who:'YOU', you:true, text:'Merritt? Where are you?' },
+  { who:'MERRITT — RECORDED LOG', you:false, text:'Do not let it hear your name. Do not let it reach the door.' }
 ];
 function showDlgLine() {
   const L = DLG.lines[DLG.i];
@@ -1039,6 +1107,9 @@ function closeNote() {
     setHint('Follow the footprints back toward the tower');
     S.blip();
     showToast('The prints lead back toward your tower.', 5);
+    startDialogue(DLG_MERRITT, function(){
+      showToast('Something in the trees just answered.', 4);
+    });
   }
 }
 $('note').addEventListener('click', function(){ closeNote(); });
@@ -1148,6 +1219,11 @@ function updateFigure(dt, t) {
     _toFig.set(figure.group.position.x, 1.8, figure.group.position.z));
   S.heartOn = true;
   S.heartBpm = clamp(165 - dist * 4.5, 62, 150);
+  S._horrorT -= dt;
+  if (S._horrorT <= 0) {
+    S.horrorPulse();
+    S._horrorT = clamp(dist * 0.16, 1.2, 3.4);
+  }
 
   // vanish when the flashlight beam pins it
   if (P.flashOn && dist < 48) {
@@ -1167,6 +1243,9 @@ $('title').addEventListener('click', function(){
   gameStarted = true;
   refreshHUD();
   showToast('Ironbark Ridge — 11:47 PM', 5);
+  startDialogue(DLG_OPENING, function(){
+    showToast('The tower is yours until dawn.', 4);
+  });
   lockPointer();
 });
 
@@ -1213,10 +1292,34 @@ function updatePlayer(dt) {
     if (P.stride > (run ? 2.7 : 2.15)) { P.stride = 0; S.footstep(run); }
   }
 
+  // Animate the visible ranger so movement reads clearly from the camera.
+  avatar.group.position.set(P.pos.x, P.pos.y, P.pos.z);
+  avatar.group.rotation.y = P.yaw;
+  const strideWave = Math.sin(P.bobPhase);
+  const strideScale = hSpeed > 0.6 && !P.frozen ? Math.min(hSpeed / 4.2, 1.5) : 0;
+  const breathing = Math.sin(elapsed * 1.8) * 0.018;
+  avatar.legs[0].rotation.x = strideWave * 0.55 * strideScale;
+  avatar.legs[1].rotation.x = -strideWave * 0.55 * strideScale;
+  avatar.arms[0].rotation.x = -strideWave * 0.32 * strideScale;
+  avatar.arms[1].rotation.x = P.flashOn ? -0.48 + Math.sin(elapsed * 2.5) * 0.025 : strideWave * 0.32 * strideScale;
+  avatar.arms[1].rotation.z = P.flashOn ? -0.16 : 0;
+  avatar.flashlight.visible = P.flashOn;
+  avatar.flashlight.rotation.z = P.flashOn ? -0.18 : 0;
+  avatar.torso.rotation.z = hSpeed > 0.6 ? Math.sin(P.bobPhase * 0.5) * 0.025 : 0;
+  avatar.torso.scale.y = 1 + breathing;
+  avatar.head.rotation.z = hSpeed > 0.6 ? Math.sin(P.bobPhase * 0.5) * 0.035 : Math.sin(elapsed * 0.7) * 0.018;
+
   // camera
-  _camPos.set(P.pos.x, P.pos.y + P.eye + bobY, P.pos.z);
+  const viewDistance = 4.6;
+  _camPos.set(P.pos.x + Math.sin(P.yaw) * viewDistance,
+    P.pos.y + P.eye + 1.15 + bobY, P.pos.z + Math.cos(P.yaw) * viewDistance);
   camera.position.copy(_camPos);
-  camera.rotation.set(P.pitch, P.yaw, 0);
+  camForward(_fwd);
+  camera.lookAt(P.pos.x + _fwd.x * 8, P.pos.y + P.eye + _fwd.y * 8, P.pos.z + _fwd.z * 8);
+  if (hSpeed > 0.6 && !P.frozen) {
+    camera.rotation.z += Math.sin(P.bobPhase * 0.5) * 0.008;
+    camera.position.y += Math.cos(P.bobPhase) * 0.025;
+  }
   if (shakeT > 0) { // scare shake
     shakeT -= dt;
     const s = Math.max(0, shakeT) * 0.05;
