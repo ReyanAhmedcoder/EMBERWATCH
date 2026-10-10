@@ -70,11 +70,17 @@
   #objective .obj-title { color:var(--accent-strong); font-weight:700; font-size:clamp(17px, 1vw + 12px, 24px);
     letter-spacing:0.14em; }
   #objective .obj-hint { color:#9fb0cc; margin-top:4px; font-size:clamp(15px, .9vw + 10px, 20px); }
+  #game-clock { position:absolute; top:18px; right:20px;
+    background:var(--panel); border-right:3px solid var(--accent);
+    box-shadow:0 10px 28px rgba(0,0,0,.28); backdrop-filter:blur(2px);
+    padding:8px 14px; color:var(--accent-strong);
+    font-size:clamp(17px, 1vw + 12px, 24px); font-weight:700; letter-spacing:0.12em;
+    font-variant-numeric:tabular-nums; }
   #prompt { position:absolute; bottom:17%; left:50%; transform:translateX(-50%);
     background:var(--panel-strong); border:1px solid #3d4c66; box-shadow:0 10px 28px rgba(0,0,0,.38);
     padding:10px 20px; font-size:clamp(18px, 1vw + 13px, 27px); letter-spacing:0.1em; color:#fff; white-space:nowrap; }
   #prompt b { color:var(--accent); }
-  #toast { position:absolute; top:18px; right:20px; font-size:clamp(15px, .8vw + 11px, 20px); color:#8fa3c8;
+  #toast { position:absolute; top:66px; right:20px; font-size:clamp(15px, .8vw + 11px, 20px); color:#8fa3c8;
     letter-spacing:0.1em; text-align:right; }
 
   /* ---- mood overlays ---- */
@@ -124,11 +130,20 @@
   /* ---- fade + ending ---- */
   #fade { position:fixed; inset:0; background:#000; opacity:0; pointer-events:none;
     z-index:60; transition:opacity 2.6s ease; }
-  #ending { background:#000; z-index:70; cursor:pointer; }
+  #ending { background:radial-gradient(ellipse at 50% 42%, #111a20 0%, #05070c 62%, #000 100%);
+    z-index:70; padding:32px; }
+  #ending .ending-kicker { color:var(--accent-strong); font-size:clamp(12px, .8vw + 8px, 18px);
+    letter-spacing:0.3em; margin-bottom:22px; }
   #ending h1 { font-size:clamp(42px, 7vw, 82px); letter-spacing:0.3em; color:var(--accent);
-    margin-left:0.3em; }
-  #ending p { margin-top:18px; color:#8fa3c8; letter-spacing:0.35em; font-size:clamp(16px, 1vw + 10px, 24px); }
-  #ending .thanks { margin-top:60px; font-size:clamp(12px, .8vw + 8px, 18px); color:#4a5568; letter-spacing:0.2em; }
+    margin-left:0.3em; line-height:1.2; }
+  #ending p { width:min(720px, 90vw); margin-top:28px; color:#d0d8e4;
+    letter-spacing:0.04em; font-size:clamp(18px, 1vw + 11px, 25px); line-height:1.8; }
+  #ending .ending-detail { margin-top:30px; color:#8fa3c8;
+    font-size:clamp(12px, .8vw + 8px, 18px); letter-spacing:0.16em; }
+  #ending button { margin-top:44px; border:1px solid #80552d; background:rgba(18,24,31,.9);
+    color:#fff; padding:14px 24px; font:inherit; font-size:clamp(14px, .8vw + 10px, 20px);
+    letter-spacing:0.18em; cursor:pointer; }
+  #ending button:hover, #ending button:focus-visible { background:#34271b; outline:2px solid var(--accent); }
 
   #pausehint { background:rgba(0,0,0,.72); z-index:55; cursor:pointer; font-size:clamp(18px, 1vw + 12px, 26px);
     letter-spacing:0.25em; }

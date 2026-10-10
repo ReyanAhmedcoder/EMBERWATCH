@@ -853,6 +853,7 @@ const avatar = { group:null, arms:[], legs:[], torso:null, head:null, flashlight
   part(new THREE.BoxGeometry(0.3, 0.14, 0.52), new THREE.MeshLambertMaterial({ color:0x11151a }), -0.2, 0.07, -0.08);
   part(new THREE.BoxGeometry(0.3, 0.14, 0.52), new THREE.MeshLambertMaterial({ color:0x11151a }), 0.2, 0.07, -0.08);
   avatar.group = g;
+  avatar.group.visible = false;
   scene.add(g);
 })();
 
@@ -937,7 +938,7 @@ const OBJECTIVES = [
   { title:'RADIO CHECK-IN',           hint:'Use the radio in the cab — E' },
   { title:'SCAN THE TREELINE',        hint:'Binoculars: hold RIGHT-CLICK or press B — scan the northern treeline' },
   { title:'INVESTIGATE THE LIGHT',    hint:'Take the stairs down and follow the pulsing light into the trees' },
-  { title:'SOMETHING IS WATCHING',    hint:'Keep your flashlight ON it. Do not let it get close.' },
+  { title:'SOMETHING IS WATCHING',    hint:'Keep your flashlight on it or run. If it reaches you, it is over.' },
   { title:'GET BACK TO THE TOWER',    hint:'Return to the cab and bar the door — E' },
   { title:'',                         hint:'' } // index 6: all done
 ];
@@ -1134,14 +1135,25 @@ function finalScare() {
   shakeT = 1.5;
   endTimer = 2.3;
 }
+function figureCaught() {
+  if (figure.state !== 'stalking') return;
+  figure.state = 'caught';
+  P.frozen = true;
+  P.vel.set(0, 0, 0);
+  S.sting();
+  S.heartOn = false;
+  $('damage').style.opacity = '1';
+  endTimer = 1.2;
+}
 function updateScare(dt) {
   if (scareTimer > 0) { scareTimer -= dt; if (scareTimer <= 0) finalScare(); }
   if (endTimer > 0) {
     endTimer -= dt;
     // the figure lunges a step closer during the sting
-    if (figure.state === 'scare') {
-      figure.group.position.lerp(new THREE.Vector3(P.pos.x, CAB_Y, P.pos.z), dt * 0.55);
-      figure.group.lookAt(P.pos.x, CAB_Y + 1.6, P.pos.z);
+    if (figure.state === 'scare' || figure.state === 'caught') {
+      const targetY = figure.state === 'scare' ? CAB_Y : P.pos.y;
+      figure.group.position.lerp(new THREE.Vector3(P.pos.x, targetY, P.pos.z), dt * 0.55);
+      figure.group.lookAt(P.pos.x, targetY + 1.6, P.pos.z);
     }
     if (endTimer <= 0) {
       $('fade').style.opacity = '1';
@@ -1153,12 +1165,22 @@ function updateScare(dt) {
     if (fadeTimer <= 0) {
       gameOver = true;
       if (document.exitPointerLock) document.exitPointerLock();
+      if (figure.state === 'caught') {
+        $('endingTitle').textContent = 'THE SIGNAL FOUND ME';
+        $('endingText').textContent =
+          'I heard it outside the trees. I turned too late. By the time Ellis called, the tower was empty.';
+        $('endingDetail').textContent = 'MERRITT WAS RIGHT. IT LEARNS THE WAY HOME.';
+      } else {
+        nightMinutes = DAWN_MINUTES;
+        $('game-clock').textContent = '6:00 AM';
+      }
       $('ending').classList.remove('hidden');
       S.cricketsOn = false;
+      S.heartOn = false;
     }
   }
 }
-$('ending').addEventListener('click', function(){ location.reload(); });
+$('endingRestart').addEventListener('click', function(){ location.reload(); });
 
 /* =====================================================================
    FIGURE BEHAVIOR — appears 3x, closer each time; vanishes in the beam
@@ -1231,6 +1253,19 @@ function updateFigure(dt, t) {
     camForward(_fwd);
     if (_fwd.dot(_toFig) > 0.986) figureVanish();
   }
+  if (figure.state !== 'stalking') return;
+
+  // The figure steadily closes in unless the flashlight drives it away.
+  const dx = P.pos.x - figure.group.position.x;
+  const dz = P.pos.z - figure.group.position.z;
+  const groundDist = Math.hypot(dx, dz);
+  if (groundDist <= 1.4) {
+    figureCaught();
+    return;
+  }
+  const approach = Math.min(groundDist - 1.4, (2.2 + figure.stage * 0.65) * dt);
+  figure.group.position.x += dx / groundDist * approach;
+  figure.group.position.z += dz / groundDist * approach;
 }
 
 /* =====================================================================
@@ -1310,9 +1345,7 @@ function updatePlayer(dt) {
   avatar.head.rotation.z = hSpeed > 0.6 ? Math.sin(P.bobPhase * 0.5) * 0.035 : Math.sin(elapsed * 0.7) * 0.018;
 
   // camera
-  const viewDistance = 4.6;
-  _camPos.set(P.pos.x + Math.sin(P.yaw) * viewDistance,
-    P.pos.y + P.eye + 1.15 + bobY, P.pos.z + Math.cos(P.yaw) * viewDistance);
+  _camPos.set(P.pos.x, P.pos.y + P.eye + bobY, P.pos.z);
   camera.position.copy(_camPos);
   camForward(_fwd);
   camera.lookAt(P.pos.x + _fwd.x * 8, P.pos.y + P.eye + _fwd.y * 8, P.pos.z + _fwd.z * 8);
@@ -1392,11 +1425,29 @@ function updatePrompt() {
 /* ---------------- main loop ---------------- */
 const clock = new THREE.Clock();
 let elapsed = 0;
+let nightMinutes = 11 * 60 + 47;
+const DAWN_MINUTES = 24 * 60 + 6 * 60;
+let nightClockRemainder = 0;
+function updateGameClock(dt) {
+  nightClockRemainder += dt;
+  const elapsedMinutes = Math.floor(nightClockRemainder);
+  if (elapsedMinutes > 0) {
+    nightMinutes = Math.min(nightMinutes + elapsedMinutes, DAWN_MINUTES);
+    nightClockRemainder -= elapsedMinutes;
+    const timeOfDay = nightMinutes % (24 * 60);
+    const hour24 = Math.floor(timeOfDay / 60);
+    const hour12 = hour24 % 12 || 12;
+    const minute = String(timeOfDay % 60).padStart(2, '0');
+    const period = hour24 < 12 ? 'AM' : 'PM';
+    $('game-clock').textContent = hour12 + ':' + minute + ' ' + period;
+  }
+}
 function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.05);
   elapsed += dt;
   if (gameStarted && !gameOver) {
+    updateGameClock(dt);
     updatePlayer(dt);
     updateTriggers(dt);
     updateFigure(dt, elapsed);

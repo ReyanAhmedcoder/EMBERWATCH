@@ -7,6 +7,7 @@ EMBERWATCH is a browser-based horror prototype built with HTML, CSS, and JavaScr
 - Full-screen 3D prototype scene
 - Procedural audio with synthesized wind, static, footsteps, heartbeat, and jump-scare effects
 - Interactive title screen, objective HUD, dialogue, and journal note overlays
+- In-game clock starting at 11:47 PM and advancing one game minute per real second until dawn
 - Keyboard and mouse controls for exploration and interaction
 
 ## Run locally

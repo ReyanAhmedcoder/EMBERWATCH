@@ -11,6 +11,7 @@
 
 <div id="hud" class="hidden">
   <div id="objective"><div class="obj-title">OBJECTIVE</div><div class="obj-hint"></div></div>
+  <div id="game-clock" aria-label="In-game time">11:47 PM</div>
   <div id="toast"></div>
   <div id="prompt" class="hidden"><b>E</b> &nbsp;<span id="promptText"></span></div>
 </div>
@@ -42,7 +43,7 @@
   <h2>NIGHT 1 &mdash; IRONBARK RIDGE</h2>
   <div class="mission">
     <div class="mission-title">YOUR OBJECTIVE</div>
-    <p>Take over the tower where Ranger Merritt vanished. Find her last recording, follow the impossible signal, and survive long enough to see dawn.</p>
+    <p>Take over the tower where Ranger Merritt vanished. Find her last recording, follow the impossible signal, and survive long enough to see dawn — in first person.</p>
   </div>
   <div class="begin">CLICK TO BEGIN</div>
   <div class="controls">
@@ -55,9 +56,11 @@
 <div id="pausehint" class="overlay hidden"><div>CLICK TO RESUME</div></div>
 <div id="fade"></div>
 <div id="ending" class="overlay hidden">
-  <h1>NIGHT 1 COMPLETE</h1>
-  <p>TO BE CONTINUED...</p>
-  <div class="thanks">THE MERRITT FILES WILL CONTINUE</div>
+  <div class="ending-kicker">THE MERRITT FILES &nbsp; / &nbsp; NIGHT 1</div>
+  <h1 id="endingTitle">DAWN AT IRONBARK</h1>
+  <p id="endingText">I brace the door as something strikes it from the other side. At first light, the knocking stops. Ellis answers my radio—but the signal is still whispering from the dark.</p>
+  <div class="ending-detail" id="endingDetail">I MADE IT THROUGH THE NIGHT. MERRITT IS STILL MISSING.</div>
+  <button id="endingRestart" type="button">PLAY AGAIN</button>
 </div>
 <div id="loaderr" class="overlay hidden"><div>Could not load the 3D engine.<br>Check your connection and reload.</div></div>
 
